@@ -1,0 +1,4 @@
+(executable
+ (public_name compression)
+ (name main)
+ (libraries compression))

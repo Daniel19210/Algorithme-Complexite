@@ -1,0 +1,33 @@
+\vspace{1ex}
+
+\hrule
+Voilà le contenu du fichier inclus.
+
+Cela reste du \LaTeX, donc maths $f(x)=x^12$, complexité $\varphi$ ou $O$, etc.
+
+Une équation sans label :
+$$
+\begin{pmatrix}
+	x&2\\
+	f(x)&3
+\end{pmatrix}
+=\begin{matrix}
+0&1\\
+1&0\\
+\end{matrix}
+$$
+
+Ou avec label : 
+\begin{equation}
+	\label{eq:aveclabel}
+	\Delta(x) = \left\{
+	\begin{aligned}
+		&0 & \text{si\quad} &\frac{Z}{\varepsilon}=0\\
+		&x^{23} & \text{\quad sinon}&\\
+	\end{aligned}
+	\right.
+\end{equation}
+
+Pour pouvoir y faire référence dans le texte : c'est l'équation~\ref{eq:aveclabel}, page~\pageref{eq:aveclabel} (notez le \~{}  espace insécable dans le source, pour éviter le retour à la ligne avant le numéro de l'équation).
+\hrule
+\vspace{1ex}
