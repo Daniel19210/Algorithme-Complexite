@@ -1,4 +1,5 @@
 (executable
  (public_name compression)
  (name main)
- (libraries gsl compression))
+ (libraries camlimages.graphics camlimages.jpeg gsl compression)
+ (modules svd photo main))
