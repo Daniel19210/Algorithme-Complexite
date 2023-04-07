@@ -1,0 +1,2 @@
+all:
+	octave main.m
