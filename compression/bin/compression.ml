@@ -9,22 +9,6 @@ let convert_array_int_to_float array_int =
 (* Effectue le compression du tableau de taille MxN selon le compression_rate (un pourcentage du rang de la matrice)
 Renvoie une matrie MxN de range K, qui est le résultat de la SVD compressée *)
 let make_compression array compression_rate verbose =
-    (* Effectue la Svd avec le librairie Gsl renvoie (Array(MxN), Array(N), Array(NxN)) *)
-    let exec_svd matrix =
-        let (_, nb_column) = Matrix.dims matrix in
-        let v = Matrix.create ?init:(Some 0.) nb_column nb_column in (* NxN *)
-        let s = Vector.create ?init:(Some 0.) nb_column in (* 1xN *)
-        let work = Vector.create ?init:(Some 0.) nb_column in (* 1xN *)
-
-        let vecMat_u = Vectmat.mat_convert (`M (Matrix.copy matrix)) in (* MxN *)
-        let vecMat_v = Vectmat.mat_convert (`M v) in
-        let vecMat_s = Vectmat.vec_convert (`V s) in
-        let vecMat_work = Vectmat.vec_convert (`V work) in
-
-        Linalg._SV_decomp ~a:vecMat_u ~v:vecMat_v ~s:vecMat_s ~work:vecMat_work; (* Renvoie la matrice v, pas la transposée*)
-        (Vectmat.to_arrays vecMat_u), (Vectmat.to_array vecMat_s), (Vectmat.to_arrays vecMat_v) in
-
-
     (* Ajoute autant de ligne que nécessaire pour avoir une matrice carrée *)
     let pad_matrix matrix nb_row nb_column=
         let array_matrix = Matrix.to_arrays matrix in
@@ -40,6 +24,22 @@ let make_compression array compression_rate verbose =
         let matrix = if padding then (pad_matrix (Matrix.of_arrays array) nb_row nb_column) else (Matrix.of_arrays array) in 
         let nb_row = (fst (Matrix.dims matrix)) in
         (nb_row, nb_column, matrix, padding) in
+    (* Effectue la Svd avec le librairie Gsl renvoie (Array(MxN), Array(N), Array(NxN)) *)
+
+
+    let exec_svd matrix =
+        let (_, nb_column) = Matrix.dims matrix in
+        let v = Matrix.create ?init:(Some 0.) nb_column nb_column in (* NxN *)
+        let s = Vector.create ?init:(Some 0.) nb_column in (* 1xN *)
+        let work = Vector.create ?init:(Some 0.) nb_column in (* 1xN *)
+
+        let vecMat_u = Vectmat.mat_convert (`M (Matrix.copy matrix)) in (* MxN *)
+        let vecMat_v = Vectmat.mat_convert (`M v) in
+        let vecMat_s = Vectmat.vec_convert (`V s) in
+        let vecMat_work = Vectmat.vec_convert (`V work) in
+
+        Linalg._SV_decomp ~a:vecMat_u ~v:vecMat_v ~s:vecMat_s ~work:vecMat_work; (* Renvoie la matrice v, pas la transposée*)
+        (Vectmat.to_arrays vecMat_u), (Vectmat.to_array vecMat_s), (Vectmat.to_arrays vecMat_v) in
 
 
     (* Redéfénir taux de compression comme étant le pourcentage de valeur singulière à garder plutôt que le pourcentage de colonnes à garder*)
@@ -66,6 +66,10 @@ let make_compression array compression_rate verbose =
             let sum_comp_SV = Array.fold_left (+.) 0. array_s_comp in
             let ratio = sum_comp_SV /. sum_all_SV in
             Printf.printf "La qualitée de reconstruction est de %.4f\n" ratio;
+            let non_zero_s = Array.of_list (List.filter (fun x -> x <> 0. ) (Array.to_list array_s)) in
+            Printf.printf "Taille de l'image = (%d, %d)\n" nb_row nb_column;
+            Printf.printf "Rang de l'image = %d; Rang de la matrice compressée = %d\n" (Array.length non_zero_s) (Array.length (Vectmat.to_arrays vecMat_s_comp));
+            print_newline ();
         );
 
         (vecMat_u_comp, vecMat_s_comp, vecMat_vT_comp, vecMat_inter, vecMat_res) in
@@ -81,13 +85,6 @@ let make_compression array compression_rate verbose =
 
     Linalg.matmult ~a:vecMat_u_comp ~b:vecMat_s_comp vecMat_inter;
     Linalg.matmult ~a:vecMat_inter ~b:vecMat_vT_comp vecMat_res;
-
-    if verbose then (   (* Optionnel pour avoir des informations supplémentaires sur la matrice en console *)
-        let non_zero_s = Array.of_list (List.filter (fun x -> x <> 0. ) (Array.to_list array_s)) in
-        Printf.printf "Taille de l'image = (%d, %d)\n" nb_row nb_column;
-        Printf.printf "Rang de l'image = %d; Rang de la matrice compressée = %d\n" (Array.length non_zero_s) (Array.length (Vectmat.to_arrays vecMat_s_comp));
-        print_newline ();
-    );
 
     (*if padded then (Vectmat.to_arrays vecMat_res) (* Pour vérifier que le padding n'a pas d'effet sur la SVD *)*)
     if padded then Array.sub (Vectmat.to_arrays vecMat_res) 0 (Array.length array) (* Retire les lignes qui ont été ajoutées*)
